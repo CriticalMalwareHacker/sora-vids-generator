@@ -1,87 +1,76 @@
-# React + TypeScript + Vite
+# Sora 2 Video Generator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A local React + Express app for crafting video prompts and sending them to your own video-generation API without exposing API keys to the browser.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Single-page React UI for prompt, context, negative prompt, and style inputs
+- Express proxy that forwards requests to your configured video provider
+- API key stored in `.env.local` and never shipped to the client
+- Normalized response handling (video URL, job ID, raw provider payload)
+- Optional download flow for OpenAI-style `/v1/videos` job responses
 
-## React Compiler
+## Requirements
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 18+ (for built-in `fetch`)
+- npm
 
-## Expanding the ESLint configuration
+## Setup
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Install dependencies:
 
-````js
-export default defineConfig([
-  # Sora 2 Video Generator
+   ```bash
+   npm install
+   ```
 
-  A locally hosted React app with a server-side proxy for your video generation API.
+2. Create a `.env.local` file in the project root:
 
-  The browser talks only to the local Express server. Your API key stays in `.env.local` and is forwarded from the server to whatever video endpoint you configure.
+   ```bash
+   cp .env.example .env.local
+   ```
 
-  ## Setup
+3. Update `.env.local` with your provider details:
 
-  1. Install dependencies:
-
-     ```bash
-     npm install
-     ```
-
-  2. Create a `.env.local` file in the project root with your provider details:
-
-     ```bash
+   ```bash
    VIDEO_API_URL=https://api.openai.com/v1/videos
-     VIDEO_API_KEY=your-secret-key
-     VIDEO_API_KEY_HEADER=Authorization
-     VIDEO_API_KEY_PREFIX=Bearer
-     VIDEO_MODEL=sora-2
+   VIDEO_API_KEY=your-secret-key
+   VIDEO_API_KEY_HEADER=Authorization
+   VIDEO_API_KEY_PREFIX=Bearer
+   VIDEO_MODEL=sora-2
    VIDEO_PROVIDER=OpenAI Sora 2
-     PORT=3000
-     ```
+   PORT=3000
+   ```
 
-  3. Start the local app:
+4. Start the app:
 
-     ```bash
-     npm run dev
-     ```
+   ```bash
+   npm run dev
+   ```
 
-  Open `http://localhost:3000`.
+5. Open `http://localhost:3000`.
 
-  ## What the app sends
+## Usage
 
-  The frontend collects:
+- Fill out the form and click **Generate video**.
+- The request preview and provider response appear on the right.
+- If the provider returns a direct `videoUrl`, the app downloads it immediately.
+- If the provider returns a job ID (OpenAI-style), the app polls `/api/videos/:id` and downloads `/api/videos/:id/content` once ready.
 
-  - prompt
-  - extra context
-  - negative prompt
-  - style
-  - model
-  - aspect ratio
-  - duration
-  - optional seed
+## Provider behavior
 
-   For OpenAI video requests, the server maps the form to `POST /v1/videos` and normalizes common response shapes such as:
+- When `VIDEO_API_URL` points to `https://api.openai.com/v1/videos`, the server maps inputs to OpenAI’s expected payload (`model`, `prompt`, `size`, `seconds`).
+- For other providers, the server forwards the full form payload (`prompt`, `context`, `negativePrompt`, `style`, `aspectRatio`, `durationSeconds`, `seed`) and adds metadata.
+- If your provider does not return a direct video URL, update `server.ts` to match its job status and download endpoints.
 
-  - `videoUrl`
-  - `url`
-  - `output[0].url`
-  - `data.videoUrl`
-  - `jobId` / `id` / `requestId`
+## Scripts
 
-  If your provider returns a job instead of a direct video URL, the raw response is still shown in the UI.
+- `npm run dev` — start the Vite + Express dev server
+- `npm run build` — build client and bundle the server
+- `npm run start` — run the production server from `dist/`
+- `npm run preview` — build and run the production server
+- `npm run lint` — run ESLint
+- `npm run clean` — remove build output
 
-  ## Build and run
+## Security note
 
-  ```bash
-  npm run build
-  npm run start
-````
-
-## Notes
-
-- The project is intentionally provider-agnostic because different video APIs use different request and response formats.
-- If your API expects a different payload shape, adjust the body in [`server.ts`](server.ts) and keep the frontend the same.
+This app keeps API keys on the server only. Never commit `.env.local`.
