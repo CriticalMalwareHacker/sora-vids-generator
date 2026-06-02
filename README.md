@@ -2,6 +2,8 @@
 
 A local React + Express app for crafting video prompts and sending them to your own video-generation API without exposing API keys to the browser.
 
+> Warning: the Sora model is deprecated on September 24, 2026.
+
 ## Features
 
 - Single-page React UI for prompt, context, negative prompt, and style inputs
